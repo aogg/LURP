@@ -11,5 +11,5 @@ gcc -o udpproxy udpproxy.c -lws2_32
 
 ## Usage
 ```
-udpproxy.exe <Upstream IP> <Upstream PORT> <Listener IP> <Listener PORT>
+udpproxy.exe -upip <UPSTREAMIP> -upport <UPSTREAMPORT> -lip <LISTENINGIP> -lport <LISTENINGPORT> [-d]
 ```

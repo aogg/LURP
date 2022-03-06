@@ -15,16 +15,48 @@ void terminate(int signum) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 5) {
-        fprintf(stderr, "[ERROR] Arguments insufficient\n");
-        printf("[INFO] Usage: udpproxy.exe \"UpstreamIP\" UpstreamPORT \"ListenerIP\" ListenerPORT");
+
+    // Vars declaration
+    char* upip = "";
+    int upport = 0;
+    char* lip = "";
+    int lport = 0;
+    int isDaemon = 0;
+
+    // Parse arguments
+    for (int i=0;i<argc;i++) {
+        if (strcmp(argv[i], "-upip") == 0 && strcmp(argv[i+1], "") != 0) {
+            upip = argv[i+1];
+        }
+        if (strcmp(argv[i], "-upport") == 0 && strcmp(argv[i+1], "") != 0) {
+            upport = strtol(argv[i+1], NULL, 10);
+        }
+        if (strcmp(argv[i], "-lip") == 0 && strcmp(argv[i+1], "") != 0) {
+            lip = argv[i+1];
+        }
+        if (strcmp(argv[i], "-lport") == 0 && strcmp(argv[i+1], "") != 0) {
+            lport = strtol(argv[i+1], NULL, 10);
+        }
+        if (strcmp(argv[i], "-d") == 0) {
+            isDaemon = 1;
+        }
+    }
+
+    // Check if required arguments are present
+    if (
+        upip == "" ||
+        upport == 0 ||
+        lip == "" ||
+        lport == 0
+    ) {
+        fprintf(stderr, "[USAGE] udpproxy.exe -upip <UPSTREAMIP> -upport <UPSTREAMPORT> -lip <LISTENINGIP> -lport <LISTENINGPORT> [-d]\n");
         return 1;
     }
 
-    char* upip = argv[1];
-    int upport = strtol(argv[2], NULL, 10);
-    char* lip = argv[3];
-    int lport = strtol(argv[4], NULL, 10);
+    // Check if daemon mode
+    if (isDaemon == 1) {
+        ShowWindow(GetConsoleWindow(), SW_HIDE);
+    }
 
     // Close sockets if terminated
     signal(SIGINT, terminate);
@@ -52,7 +84,7 @@ int main(int argc, char* argv[]) {
 
     // Try to connect to upstream
     printf("[INFO] Connecting to upstream server at [%s:%d]\n", upip, upport);
-    if (connect(upsock, (SOCKADDR*)&upaddr, upaddrlen) != 0) {
+    if (connect(upsock, (SOCKADDR*)&upaddr, upaddrlen) == SOCKET_ERROR) {
         fprintf(stderr, "[ERROR] Can't connect to upstream server: %d\n", WSAGetLastError());
         closesocket(upsock);
         return 1;
@@ -75,7 +107,7 @@ int main(int argc, char* argv[]) {
     int laddrlen = sizeof(laddr);
 
     // Try to bind
-    if (bind(lsock, (SOCKADDR*)&laddr, laddrlen) != 0) {
+    if (bind(lsock, (SOCKADDR*)&laddr, laddrlen) == SOCKET_ERROR) {
         fprintf(stderr, "[ERROR] Failed to bind: %d\n", WSAGetLastError());
         closesocket(upsock);
         closesocket(lsock);
@@ -94,38 +126,25 @@ int main(int argc, char* argv[]) {
         memset(lbuf, '\0', 4096);
 
         if (recvfrom(lsock, lbuf, 4096, 0, (SOCKADDR*)&laddr, &laddrlen) == SOCKET_ERROR) {
-            fprintf(stderr, "[ERROR] Receive failed: %d\n", WSAGetLastError());
-            closesocket(upsock);
-            closesocket(lsock);
-            return 1;
-        } else {
-            // Send to upstream
-            if (sendto(upsock, lbuf, 4096, 0, (SOCKADDR*)&upaddr, upaddrlen) < 0) {
-                fprintf(stderr, "[ERROR] Send to upstream failed: %d\n", WSAGetLastError());
-                closesocket(upsock);
-                closesocket(lsock);
-                return 1;
-            }
-            while(1) {
-                // Clear of previous data
-                memset(upbuf, '\0', 4096);
+            fprintf(stderr, "[WARN] Receive from listener failed: %d\n", WSAGetLastError());
+        }
 
-                // Receive from upstream
-                if (recvfrom(upsock, upbuf, 4096, 0, (SOCKADDR*)&upaddr, &upaddrlen) == SOCKET_ERROR) {
-                    fprintf(stderr, "[ERROR] Receive from upstream failed: %d\n", WSAGetLastError());
-                    closesocket(upsock);
-                    closesocket(lsock);
-                    return 1;
-                } else {
-                    if (sendto(lsock, upbuf, 4096, 0, (SOCKADDR*)&laddr, laddrlen) < 0) {
-                        fprintf(stderr, "[ERROR] Send to listener failed: %d\n", WSAGetLastError());
-                        closesocket(upsock);
-                        closesocket(lsock);
-                        return 1;
-                    }
-                    break;
-                }
-            }
+        // Send to upstream
+        if (sendto(upsock, lbuf, 4096, 0, (SOCKADDR*)&upaddr, upaddrlen) == SOCKET_ERROR) {
+            fprintf(stderr, "[WARN] Send to upstream failed: %d\n", WSAGetLastError());
+        }
+
+        // Clear of previous data
+        memset(upbuf, '\0', 4096);
+
+        // Receive from upstream
+        if (recvfrom(upsock, upbuf, 4096, 0, (SOCKADDR*)&upaddr, &upaddrlen) == SOCKET_ERROR) {
+            fprintf(stderr, "[WARN] Receive from upstream failed: %d\n", WSAGetLastError());
+        }
+
+        // Send to listener
+        if (sendto(lsock, upbuf, 4096, 0, (SOCKADDR*)&laddr, laddrlen) == SOCKET_ERROR) {
+            fprintf(stderr, "[WARN] Send to listener failed: %d\n", WSAGetLastError());
         }
 
     }
