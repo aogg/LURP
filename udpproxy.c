@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     char* lip = "";
     int lport = 0;
     int isDaemon = 0;
+    int showAll = 0;
 
     // Parse arguments
     for (int i=0;i<argc;i++) {
@@ -39,6 +40,10 @@ int main(int argc, char* argv[]) {
         }
         if (strcmp(argv[i], "-d") == 0) {
             isDaemon = 1;
+        }
+        
+        if (strcmp(argv[i], "-v") == 0) {
+            showAll = 1;
         }
     }
 
@@ -123,6 +128,7 @@ int main(int argc, char* argv[]) {
     while(1) {
 
         // Clear of previous data
+        // memset(lbuf, '\0', 4096) 的作用是将 lbuf 数组中的前 4096 个字节（即数组的大小）都设置为 null 字符 ('\0')，实现了清除之前数据的目的。
         memset(lbuf, '\0', 4096);
 
         if (recvfrom(lsock, lbuf, 4096, 0, (SOCKADDR*)&laddr, &laddrlen) == SOCKET_ERROR) {
@@ -132,6 +138,10 @@ int main(int argc, char* argv[]) {
         // Send to upstream
         if (sendto(upsock, lbuf, 4096, 0, (SOCKADDR*)&upaddr, upaddrlen) == SOCKET_ERROR) {
             fprintf(stderr, "[WARN] Send to upstream failed: %d\n", WSAGetLastError());
+        }
+
+        if (showAll) {
+            printf("-----------lbuf content--------------------: %s\n", lbuf);
         }
 
         // Clear of previous data
