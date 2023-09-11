@@ -1,0 +1,26 @@
+name: Build UDP Proxy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up GCC
+        uses: mstanciu552/setup-mingw@v1
+
+      - name: Compile UDP Proxy
+        run: gcc -o udpproxy udpproxy.c -lws2_32
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: udpproxy
+          path: udpproxy
