@@ -18,6 +18,9 @@ jobs:
 
       - name: Compile UDP Proxy
         run: x86_64-w64-mingw32-gcc -o udpproxy.exe udpproxy.c -lws2_32
+        
+      - name: ls -al
+        run: ls -al ./
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
