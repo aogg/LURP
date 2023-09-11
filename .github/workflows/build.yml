@@ -28,9 +28,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
         with:
-          tag_name: v1.0.0
-          release_name: UDP Proxy v1.0.0
-          body: Release of UDP Proxy v1.0.0
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: Release of UDP Proxy latest
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
