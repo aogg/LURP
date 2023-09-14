@@ -127,6 +127,7 @@ int main(int argc, char* argv[]) {
     // Listen for connection
     while(1) {
 
+        printf("-----lbuf----start!\n");
         // Clear of previous data
         // memset(lbuf, '\0', 4096) 的作用是将 lbuf 数组中的前 4096 个字节（即数组的大小）都设置为 null 字符 ('\0')，实现了清除之前数据的目的。
         memset(lbuf, '\0', 4096);
@@ -144,6 +145,8 @@ int main(int argc, char* argv[]) {
             printf("-----------lbuf content--------------------: %s\n", lbuf);
         }
 
+        
+        printf("-----upbuf----start!\n");
         // Clear of previous data
         memset(upbuf, '\0', 4096);
 
